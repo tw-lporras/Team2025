@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Twilio University Donation Caller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            width: 100%;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #F22F46;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #D42040;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Twilio University Donation Caller</h1>
+    <div class="form-group">
+        <label for="phoneNumber">Phone Number to Call:</label>
+        <input type="tel" id="phoneNumber" placeholder="Enter phone number (e.g., +1234567890)">
+    </div>
+    <button onclick="initiateCall()">Start Call</button>
+    <div id="status"></div>
+
+    <script>
+        async function initiateCall() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                const response = await fetch('/initiateCall', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phoneNumber })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    statusDiv.innerHTML = `Call initiated successfully! Call SID: ${data.callSid}`;
+                    statusDiv.style.color = 'green';
+                } else {
+                    statusDiv.innerHTML = `Error: ${data.error}`;
+                    statusDiv.style.color = 'red';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `Error: ${error.message}`;
+                statusDiv.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+</html>
