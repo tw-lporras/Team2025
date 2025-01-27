@@ -9,104 +9,57 @@ const analytics = new Analytics({ writeKey: process.env.WRITE_KEY });
 
 const spaceID = process.env.SPACE_ID;
 
-//add a user
-function addUser(id, name, phone, address){
-
-  console.log("add user start");
-
-  try{
-    analytics.identify({
-      userId: id,
-      traits: {
-        name: name,
-        phone: phone,
-        address: address
-      }
-    });
-  }catch (error) {
-    console.error("Error adding user:", error);
-  }
-
-
-  console.log("add user done");
-}
-
-function addEvent(id, ts, order, price, shipment){
-
-  try{
-    analytics.track({
-      userId: id,
-      event: 'Pizza Ordered',
-      properties: {
-        timestamp:ts,
-        order: order,
-        price: price,
-        shippingMethod: shipment,
-      }
-    });
-  }catch (error) {
-    console.error("Error adding addEvent:", error);
-  }
-
-  console.log("add addEvent done");
-}
-
 function getProfile(id) {
-  
   const username = profileToken;
   const password = '';
-  // encode base64
   const credentials = Buffer.from(`${username}:${password}`).toString('base64');
 
-  // set headers
   const config = {
       headers: {
-          'Authorization': `Basic ${credentials}`
-      }
+          Authorization: `Basic ${credentials}`,
+      },
   };
 
   console.log('get_profile from segment for id: ' + id);
 
-  // HTTP GET
-  axios.get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/user_id:${id}/traits`, config)
+  // Return the axios Promise
+  return axios
+      .get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/phone:${id}/traits`, config)
       .then(response => {
           const traits = response.data.traits;
           console.log(traits);
-          return traits;
+          return traits; // Return the traits so it can be awaited
       })
       .catch(error => {
           console.error('get_profile error:', error);
-          return '';
+          return ''; // Return an empty string or handle errors appropriately
       });
 }
 
-function getEvents(id){
-    const axios = require('axios');
-    const username =  profileToken;
-    const password = '';
-    // encode base64
-    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
+function getEvents(id) {
+  const username = profileToken;
+  const password = '';
+  const credentials = Buffer.from(`${username}:${password}`).toString('base64');
 
-    // set headers
-    const config = {
+  const config = {
       headers: {
-        'Authorization': `Basic ${credentials}`
-      }
-    };
+          Authorization: `Basic ${credentials}`,
+      },
+  };
 
-    
-    // HTTP GET
-    axios.get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/user_id:${id}/events`, config)
+  console.log('get_events from segment for id: ' + id);
+
+  // Return the axios Promise
+  return axios
+      .get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/phone:${id}/events`, config)
       .then(response => {
-        //console.log('Authenticated');
-        //console.log(response.data); 
-        readData(response.data);
+          console.log('Events data:', response.data);
+          return response.data; // Return the events data so it can be awaited
       })
       .catch(error => {
-        console.log('Error on Authentication');
-        console.error(error); 
+          console.error('get_events error:', error);
+          return []; // Return an empty array or handle errors appropriately
       });
-
 }
 
 function readData(jsonData){
@@ -138,10 +91,13 @@ function readData(jsonData){
 
 }
 
+module.exports = { getEvents, getProfile }; // Named exports
+
+
 // addUser('8967', 'john black', '+491234567', 'Berlin Germany');
 
 // addEvent('8967', '2024-10-22', 'Medium eggplant pizza with sausages and AI sauce', 13, 'Delivery');
 
 // getEvents('8967');
 
-getProfile('8967');
+//getProfile('8967');

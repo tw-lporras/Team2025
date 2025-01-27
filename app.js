@@ -10,7 +10,8 @@ const VoiceResponse = require('twilio').twiml.VoiceResponse;
 const { GptService } = require('./services/gpt-service');
 const { TextService } = require('./services/text-service');
 const { SentimentService } = require('./services/sentiment-service');
-const prompt = require('./services/prompt');
+const { getEvents, getProfile } = require('./services/segment-service');
+let prompt = require('./services/prompt');
 
 const app = express();
 const expressWs = ExpressWs(app);
@@ -126,7 +127,7 @@ app.post('/incoming', async (req, res) => {
 });
 
 // WebSocket endpoint
-app.ws('/sockets', (ws, req) => {
+app.ws('/sockets', async (ws, req) => {
   try {
     console.log('WebSocket connection attempt received');
     ws.on('error', (error) => {
@@ -138,6 +139,17 @@ app.ws('/sockets', (ws, req) => {
     const sentimentService = new SentimentService();
     let callSid;
     let interactionCount = 0;
+    let profilePhoneNumber = msg.from;
+    let profile, events;
+    try {
+      profile = await getProfile(profilePhoneNumber);
+      events = await getEvents(profilePhoneNumber);
+    } catch (error) {
+      console.error('Error fetching profile or events:', error);
+    }
+
+    // Update prompt with fetched data
+    prompt += `And what we know about the user is they have the these traits on the Profile: ${JSON.stringify(profile)}, And that profile has these Events: ${JSON.stringify(events)}`;
     
     // Initialize record for new call
     record = {
