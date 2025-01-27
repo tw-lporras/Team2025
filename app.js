@@ -10,6 +10,7 @@ const VoiceResponse = require('twilio').twiml.VoiceResponse;
 const { GptService } = require('./services/gpt-service');
 const { TextService } = require('./services/text-service');
 const { SentimentService } = require('./services/sentiment-service');
+const prompt = require('./services/prompt');
 
 const app = express();
 const expressWs = ExpressWs(app);
@@ -78,8 +79,8 @@ app.post('/incoming', async (req, res) => {
     
     // Add the conversation relay with required parameters
     const relay = connect.conversationRelay({
-      url: `wss://${process.env.SERVER}/sockets`,
-      dtmfDetection: 'true',
+      url: `wss://3810f4bfc5b2.ngrok.app/sockets`,
+      dtmfDetection: true,
       voice: 'en-US-Neural2-F',
       language: 'en-US',
       transcriptionProvider: 'google'
@@ -141,7 +142,7 @@ app.ws('/sockets', (ws, req) => {
     // Initialize record for new call
     record = {
       model: 'gpt-3.5-turbo',
-      sys_prompt: `You are an AI voice assistant...`,
+      sys_prompt: prompt,  // Use the imported prompt here
       language: 'en-US',
       voice: 'en-US-Neural2-F',
       transcriptionProvider: 'google',

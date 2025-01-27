@@ -1,30 +1,42 @@
 const EventEmitter = require('events');
-const { Configuration, OpenAIApi } = require('openai');
-
-// Only keep the functions we need
-const changeLanguage = require('../functions/changeLanguage');
+const { OpenAI } = require('openai');
 
 class GptService extends EventEmitter {
   constructor(model = 'gpt-3.5-turbo') {
     super();
-    this.configuration = new Configuration({
-      apiKey: process.env.OPENAI_API_KEY,
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
     });
-    this.openai = new OpenAIApi(this.configuration);
-    this.userContext = [];
+    
+    this.userContext = [{
+      role: 'system',
+      content: `You are an AI voice assistant for Twilio University Alumni Relations. Your goal is to engage alumni in meaningful conversations about supporting the university through donations.
+
+Conversation Flow:
+1. Start with a warm greeting and identify yourself
+2. Ask about their Twilio University experience
+3. Share how donations impact current students
+4. Listen for opportunities to connect their success to potential donations
+5. Be prepared to explain different donation options
+6. Handle objections gracefully and maintain relationship
+
+Key Information:
+- Highlight specific programs funded by donations
+- Share success stories of scholarship recipients
+- Explain tax benefits of educational donations
+- Be ready to connect them to the Alumni Relations team for complex queries
+
+Remember to:
+- Keep responses concise and conversational
+- Listen actively and acknowledge their input
+- Be empathetic and understanding
+- Avoid being pushy or aggressive about donations
+- Focus on building a lasting relationship`
+    }];
+    
     this.model = model;
-    this.abortController = null;
     this.callInfo = {};
-  }
-
-  setCallInfo(key, value) {
-    this.callInfo[key] = value;
-  }
-
-  interrupt() {
-    if (this.abortController) {
-      this.abortController.abort();
-    }
+    this.abortController = null;
   }
 
   async completion(prompt, icount) {
@@ -37,79 +49,36 @@ class GptService extends EventEmitter {
         content: prompt,
       });
 
-      const functions = [
-        {
-          name: 'changeLanguage',
-          function: changeLanguage
-        }
-      ];
+      const completion = await this.openai.chat.completions.create({
+        model: this.model,
+        messages: this.userContext,
+        temperature: 0.7,
+      });
 
-      const completion = await this.openai.createChatCompletion(
-        {
-          model: this.model,
-          messages: this.userContext,
-          temperature: 0.7,
-          functions: functions.map(f => f.function.definition),
-          function_call: 'auto',
-        },
-        {
-          signal: this.abortController.signal,
-        }
-      );
-
-      const response = completion.data.choices[0].message;
-
-      if (response.function_call) {
-        const functionToCall = functions.find(f => f.function.definition.name === response.function_call.name);
-        if (functionToCall) {
-          const functionArgs = JSON.parse(response.function_call.arguments);
-          const functionResponse = await functionToCall.function.implementation(functionArgs);
-          
-          this.emit('tools', response.function_call.name, response.function_call.arguments, functionResponse);
-
-          this.userContext.push({
-            role: 'assistant',
-            content: null,
-            function_call: response.function_call,
-          });
-
-          this.userContext.push({
-            role: 'function',
-            name: response.function_call.name,
-            content: functionResponse,
-          });
-
-          const secondResponse = await this.openai.createChatCompletion({
-            model: this.model,
-            messages: this.userContext,
-          });
-
-          const responseText = secondResponse.data.choices[0].message.content;
-          this.userContext.push({
-            role: 'assistant',
-            content: responseText,
-          });
-          this.emit('gptreply', responseText, true, icount);
-        }
-      } else {
-        const responseText = response.content;
-        this.userContext.push({
-          role: 'assistant',
-          content: responseText,
-        });
-        this.emit('gptreply', responseText, true, icount);
-      }
+      const response = completion.choices[0].message;
+      const responseText = response.content;
+      
+      this.userContext.push({
+        role: 'assistant',
+        content: responseText,
+      });
+      
+      this.emit('gptreply', responseText, true, icount);
 
     } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log('Request was aborted');
-      } else {
-        console.error('Error:', error);
-        this.emit('gptreply', "I apologize, but I'm having trouble processing your request. Could you please try again?", true, icount);
-      }
-    } finally {
-      this.abortController = null;
+      console.error('Error in GPT completion:', error);
+      this.emit('gptreply', "I apologize, but I'm having trouble processing your request. Could you please try again?", true, icount);
     }
+  }
+
+  interrupt() {
+    if (this.abortController) {
+      this.abortController.abort();
+    }
+  }
+
+  setCallInfo(key, value) {
+    this.callInfo[key] = value;
   }
 }
 
