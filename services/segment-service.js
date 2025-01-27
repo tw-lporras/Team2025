@@ -5,7 +5,7 @@ const axios = require('axios');
 const profileToken = process.env.PROFILE_TOKEN;
 
 // instantiation
-const analytics = new Analytics({ writeKey: process.env.WRITE_KEY });
+// const analytics = new Analytics({ writeKey: process.env.WRITE_KEY });
 
 const spaceID = process.env.SPACE_ID;
 
@@ -24,7 +24,7 @@ function getProfile(id) {
 
   // Return the axios Promise
   return axios
-      .get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/phone:${id}/traits`, config)
+      .get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/user_id:${id}/traits`, config)
       .then(response => {
           const traits = response.data.traits;
           console.log(traits);
@@ -51,7 +51,7 @@ function getEvents(id) {
 
   // Return the axios Promise
   return axios
-      .get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/phone:${id}/events`, config)
+      .get(`https://profiles.segment.com/v1/spaces/${spaceID}/collections/users/profiles/user_id:${id}/events`, config)
       .then(response => {
           console.log('Events data:', response.data);
           return response.data; // Return the events data so it can be awaited

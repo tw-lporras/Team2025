@@ -82,7 +82,7 @@ app.post('/incoming', async (req, res) => {
     const relay = connect.conversationRelay({
       url: `wss://3810f4bfc5b2.ngrok.app/sockets`,
       dtmfDetection: true,
-      voice: 'en-US-Neural2-F',
+      voice: 'Google.en-US-Wavenet-C',
       language: 'en-US',
       transcriptionProvider: 'google'
     });
@@ -139,17 +139,10 @@ app.ws('/sockets', async (ws, req) => {
     const sentimentService = new SentimentService();
     let callSid;
     let interactionCount = 0;
-    let profilePhoneNumber = msg.from;
-    let profile, events;
-    try {
-      profile = await getProfile(profilePhoneNumber);
-      events = await getEvents(profilePhoneNumber);
-    } catch (error) {
-      console.error('Error fetching profile or events:', error);
-    }
+
 
     // Update prompt with fetched data
-    prompt += `And what we know about the user is they have the these traits on the Profile: ${JSON.stringify(profile)}, And that profile has these Events: ${JSON.stringify(events)}`;
+    //prompt += `And what we know about the user is they have the these traits on the Profile: ${JSON.stringify(profile)}, And that profile has these Events: ${JSON.stringify(events)}`;
     
     // Initialize record for new call
     record = {

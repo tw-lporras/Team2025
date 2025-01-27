@@ -1,12 +1,31 @@
 const EventEmitter = require('events');
 const { OpenAI } = require('openai');
+const { getEvents, getProfile } = require('./segment-service');
+
+  
+let profilePhoneNumber = 'cf13753d';
+let profile, events;
+
+async function initialize() {
+  try {
+    profile = await getProfile(profilePhoneNumber);
+    events = await getEvents(profilePhoneNumber);
+  } catch (error) {
+    console.error('Error fetching profile or events:', error);
+  }
+}
+
+// Call the `initialize` function
+initialize();
 
 class GptService extends EventEmitter {
+  
   constructor(model = 'gpt-3.5-turbo') {
     super();
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
+    
     
     this.userContext = [{
       role: 'system',
@@ -28,10 +47,13 @@ Key Information:
 
 Remember to:
 - Keep responses concise and conversational
+- Return brief responses.
 - Listen actively and acknowledge their input
 - Be empathetic and understanding
 - Avoid being pushy or aggressive about donations
-- Focus on building a lasting relationship`
+- Focus on building a lasting relationship
+Also use the context of the user profile with ${JSON.stringify(profile)} and the events with ${JSON.stringify(events)}
+`
     }];
     
     this.model = model;
