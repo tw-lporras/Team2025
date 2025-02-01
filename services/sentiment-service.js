@@ -31,7 +31,7 @@ class SentimentService {
       };
 
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [
           prompt,
           { role: 'user', content: this.conversationHistory.join('\n') }
